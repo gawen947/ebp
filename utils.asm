@@ -53,9 +53,11 @@ errsys_r15:
   mov qword [errno], rax
   jmp err_r15
 %elifdef Linux
+  cmp rax, 0
+  jns .exit
   sub 0, rax
   mov qword [errno], rax
-  jns errx_r15
+  jmp err_r15
 %endif
 .exit:
   add rsp, 8
