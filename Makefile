@@ -1,7 +1,7 @@
 SRC=$(wildcard *.asm)
 OBJ=$(SRC:.asm=.o)
 EXE=ebp
-ASFLAGS := -f elf64 -F dwarf
+ASFLAGS := -f elf64 -F dwarf -D$(shell uname -s)=1
 LDFLAGS :=
 
 ifdef VERBOSE
