@@ -23,8 +23,8 @@
 ;; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 global main
-extern strcmp,puts,printf,errx,err
-extern errx_r15,err_r15
+extern strcmp,printf,errx,err
+extern errx_r15,err_r15,patch
 
 section .rodata
   progName     db "Exe-Binary-Patcher (EBP)",0
@@ -46,6 +46,8 @@ section .rodata
 
   ; all error messages
   errInvalidNbArgs db "require at least one argument",0
+  errPatchInvalidNbArgs db "patch EXE < PATCH",0
+  errDiffInvalidNbArgs  db "diff OLD_EXE NEW_EXE",0
   errUnknownCmd    db "unknown command (for a list type 'help')",0
 
 section .bss
@@ -64,6 +66,7 @@ show_version:
   add rsp, 8
   ret
 
+; cmd_* (rdi=argc, rsi=argv)
 cmd_help:
   sub rsp, 8                    ; stack align on 16-byte
   mov rdi, helpMsgFmt
@@ -80,10 +83,27 @@ cmd_version:
   ret
 
 cmd_patch:
-cmd_diff:
-  mov rdi, cmdDiff
   sub rsp, 8
-  call puts
+  mov r15, errPatchInvalidNbArgs
+  cmp rdi, 3
+  jnz errx_r15
+
+  mov rdi, [rsi+16]             ; rdi = argv[2]
+  call patch
+
+  add rsp, 8
+  ret
+
+cmd_diff:
+  sub rsp, 8
+  mov r15, errDiffInvalidNbArgs
+  cmp rdi, 5
+  jnz errx_r15
+
+  mov rdi, [rsi+16]             ; rdi = argv[2]
+  mov rsi, [rsi+24]             ; rsi = argv[3]
+;  call diff
+
   add rsp, 8
   ret
 
@@ -134,6 +154,8 @@ main:
   test rax, rax
   jnz .loop0
 
+  mov rdi, [rbp-8]
+  mov rsi, [rbp-16]
   call [r14]
 
   mov rax, 0

@@ -22,41 +22,21 @@
 ;; OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ;; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-global errx_r15,err_r15,warn_r15,warnx_r15,errsys_r15
-extern errx,err,warn,warnx,errno
+;; common macro and defines
 
-section .text
-; configure error message via register r15
-_err_wrapper_r15:
-  mov rdi, 1
-  mov rsi, r15
-  mov al, 0
-  call r11
-errx_r15:
-  mov r11, errx
-  jmp _err_wrapper_r15
-err_r15:
-  mov r11, err
-  jmp _err_wrapper_r15
-warn_r15:
-  mov r11, warn
-  jmp _err_wrapper_r15
-warnx_r15:
-  mov r11, warnx
-  jmp _err_wrapper_r15
-
-; check if a syscall returned correctly
-errsys_r15:
-  push 0                        ; we don't want to touch the carry
 %ifdef FreeBSD
-  jnc .exit
-  mov qword [errno], rax
-  jmp err_r15
-%elifdef Linux
-  sub 0, rax
-  mov qword [errno], rax
-  jns errx_r15
+; syscall
+%define SYS_read  3
+%define SYS_write 4
+%define SYS_open  5
+%define SYS_close 6
+
+; files
+%define O_RDONLY 0
+%define O_WRONLY 1
+%define O_RDWR   2
+%define STDIN    0
+%define STDOUT   1
+%define STDERR   2
+
 %endif
-.exit:
-  add rsp, 8
-  ret

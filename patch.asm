@@ -22,41 +22,39 @@
 ;; OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ;; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-global errx_r15,err_r15,warn_r15,warnx_r15,errsys_r15
-extern errx,err,warn,warnx,errno
+global patch
+extern open
+extern errsys_r15
+
+%include "common.inc"
+
+section .rodata
+  errCannotOpen  db "cannot open file for patching",0
+  errCannotClose db "cannot close patched file",0
+  fileTest       db "nonexistent.txt",0
 
 section .text
-; configure error message via register r15
-_err_wrapper_r15:
-  mov rdi, 1
-  mov rsi, r15
-  mov al, 0
-  call r11
-errx_r15:
-  mov r11, errx
-  jmp _err_wrapper_r15
-err_r15:
-  mov r11, err
-  jmp _err_wrapper_r15
-warn_r15:
-  mov r11, warn
-  jmp _err_wrapper_r15
-warnx_r15:
-  mov r11, warnx
-  jmp _err_wrapper_r15
 
-; check if a syscall returned correctly
-errsys_r15:
-  push 0                        ; we don't want to touch the carry
-%ifdef FreeBSD
-  jnc .exit
-  mov qword [errno], rax
-  jmp err_r15
-%elifdef Linux
-  sub 0, rax
-  mov qword [errno], rax
-  jns errx_r15
-%endif
-.exit:
-  add rsp, 8
+; rdi = char *file_to_patch
+; patch is read from STDIN
+patch:
+  push rbp
+  mov rbp, rsp
+
+  mov r15, errCannotOpen
+  mov rax, SYS_open
+  mov rsi, O_RDWR
+  syscall
+  call errsys_r15
+  mov r12, rax                  ; r12 = file_to_patch_fd
+
+.close:
+  mov r15, errCannotClose
+  mov rax, SYS_close
+  mov rdi, r12
+  syscall
+  call errsys_r15
+
+  mov rsp, rbp
+  pop rbp
   ret
