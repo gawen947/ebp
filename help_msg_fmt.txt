@@ -1,0 +1,14 @@
+usage: %s COMMAND
+
+Commands:
+  help
+    Show this help message.
+
+  version
+    Show program version.
+
+  patch FILE
+    Read a patch from stdin and try to apply it on FILE.
+
+  diff ORIG NEW
+    Create a patch on stdout from the ORIG file to NEW file.
